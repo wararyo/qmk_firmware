@@ -16,7 +16,7 @@
 #include QMK_KEYBOARD_H
 
 // Defines the keycodes used by our macros in process_record_user
-enum custom_keycodes {
+enum tap_dances {
   TD_ESC_GRV = 0,
 };
 
@@ -31,15 +31,15 @@ qk_tap_dance_action_t tap_dance_actions[] = {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /* Keymap (Base Layer) Default Layer
    * ,----------------------------------------------------------------.
-   * |Esc|  1|  2|  3|  4|  5|  6|  7|  8|  9|  0|  -|  =|Backsp |Home|
-   * |----------------------------------------------------------------|```````
-   * |Tab  |  Q|  W|  E|  R|  T|  Y|  U|  I|  O|  P|  [|  ]|  \  |PgUp|
-   * |----------------------------------------------------------------|```````
-   * |Caps   |  A|  S|  D|  F|  G|  H|  J|  K|  L|  ;|  '|Return |PgDn|
+   * |Esc|  1|  2|  3|  4|  5|  6|  7|  8|  9|  0|  -|  =|Backsp |F12 |
    * |----------------------------------------------------------------|
-   * |Shift   |  Z|  X|  C|  V|  B|  N|  M|  ,|  .|  /|Shift | Up|End |
+   * |Tab  |  Q|  W|  E|  R|  T|  Y|  U|  I|  O|  P|  [|  ]|  \  |F7  |
    * |----------------------------------------------------------------|
-   * |Ctrl|Win |Alt |        Space          |Alt| FN|Ctrl|Lef|Dow|Rig |
+   * |Win    |  A|  S|  D|  F|  G|  H|  J|  K|  L|  ;|  '|Return |F5  |
+   * |----------------------------------------------------------------|
+   * |Shift   |  Z|  X|  C|  V|  B|  N|  M|  ,|  .|  /|Shift | Up|F3  |
+   * |----------------------------------------------------------------|
+   * |Ctrl|Alt |NoConv|        Space          |Conv| FN  |Lef|Dow|Rig |
    * `----------------------------------------------------------------'
    */
 [0] = LAYOUT_65_ansi_blocker(
@@ -51,15 +51,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   /* Keymap Fn Layer
    * ,----------------------------------------------------------------.
-   * |~ `|F1 |F2 |F3 |F4 |F5 |F6 |F7 |F8 |F9 |F10|F11|F12|Del    |Ins |
+   * |Esc|F1 |F2 |F3 |F4 |F5 |F6 |F7 |F8 |F9 |F10|F11|F12|Del    |PrSc|
    * |----------------------------------------------------------------|
-   * |     |   |Up |   |   |   |   |   |PSc|SLk|Pau|Up |   |     |    |
+   * |     |   |Up |   |   |   |   |   |7  |8  |9  |   |   |     |Home|
    * |----------------------------------------------------------------|
-   * |      |Lef|Dow|Rig|   |   |   |   |Hom|PUp|Lef|Rig|        |    |
+   * |      |Lef|Dow|Rig|   |   |   |   |4  |5  |6  |:  |        |PgUp|
    * |----------------------------------------------------------------|
-   * |        |   |   |   |   |   |   |   |End|PDn|Dow|      |PUp|    |
+   * |        |   |   |   |   |   |   |   |1  |2  |3  |      |WUp|PgDn|
    * |----------------------------------------------------------------|
-   * |    |    |    |                       |   |   |    |Hom|PDn|End |
+   * |    |    |    |                       |   |   |    |WLf|WDn|WRig|
    * `----------------------------------------------------------------'
    */
 [1] = LAYOUT_65_ansi_blocker(
@@ -67,7 +67,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______,_______,KC_UP,_______,_______,_______,_______,KC_P7,KC_P8,KC_P9,_______,_______,_______,KC_MPLY,KC_HOME,\
   _______,KC_LEFT,KC_DOWN,KC_RGHT,_______,_______,_______,KC_P4,KC_P5,KC_P6,KC_COLN,_______,KC_ENT,KC_PGUP,\
   _______,_______,_______,_______,_______,_______,_______,KC_P1,KC_P2,KC_P3,_______,KC_APP,LGUI(KC_UP),KC_PGDN,\
-  RGB_TOG,RGB_MOD,_______,KC_P0,KC_PDOT,KC_TRNS,LGUI(KC_LEFT),LGUI(KC_DOWN),LGUI(KC_RGHT)),
+  RGB_MOD,RGB_HUI,RGB_SAI,KC_P0,KC_PDOT,KC_TRNS,LGUI(KC_LEFT),LGUI(KC_DOWN),LGUI(KC_RGHT)),
 
 };
 
@@ -108,4 +108,16 @@ void matrix_scan_user(void) {
 
 void led_set_user(uint8_t usb_led) {
 
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+  switch(biton32(state)) {
+    case 0:
+      rgblight_disable();
+      break;
+    case 1:
+      rgblight_enable();
+    break;
+  }
+  return state;
 }
