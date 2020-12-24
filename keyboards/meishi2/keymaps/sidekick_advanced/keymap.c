@@ -30,11 +30,19 @@ void showNumber(void) {
   send_string(numberStr);
 }
 
+void resetNumber(void) {
+  // リセット
+  plusNumber = 0;
+  numberStr[0] = '\0';
+  writePin(PRO_MICRO_LED_TX, true); //LED消灯
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch(keycode){
     case BASE: //コマンドの基本部分を入力する
       if(record->event.pressed){
         //pressed
+        resetNumber();
         SEND_STRING("/r 2d6");
       } else {
         //released
@@ -60,13 +68,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         //released
       }
       break;
-    case EXECUTE: //ENTERを押し、初期化
+    case EXECUTE: //ENTERを押し、諸々をリセット
       if(record->event.pressed){
         //pressed
         tap_code(KC_ENTER);
-        plusNumber = 0;
-        numberStr[0] = '\0';
-        writePin(PRO_MICRO_LED_TX, true); //LED消灯
+        resetNumber();
       } else {
         //released
       }
