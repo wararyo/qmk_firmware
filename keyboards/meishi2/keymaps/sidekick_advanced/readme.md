@@ -1,0 +1,1 @@
+# The keymap for meishi2 which is configured for sidekick bot
