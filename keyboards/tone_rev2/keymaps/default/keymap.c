@@ -15,54 +15,89 @@
  */
 #include QMK_KEYBOARD_H
 
-// Defines the keycodes used by our macros in process_record_user
-enum tap_dances {
-  TD_MODE_GRV = 0,
+#define PRO_MICRO_LED_TX D5
+#define PRO_MICRO_LED_RX B0
+
+enum keymap_layer {
+    KL_WINDOWS,
+    KL_CUBASE,
+    KL_LIGHTROOM,
+    keymap_length
 };
 
-// Tap dances
-void dance_mode (qk_tap_dance_state_t *state, void *user_data);
-void dance_mode_finished (qk_tap_dance_state_t *state, void *user_data);
-void dance_mode_reset (qk_tap_dance_state_t *state, void *user_data);
-qk_tap_dance_action_t tap_dance_actions[] = {
-  [TD_MODE_GRV] = ACTION_TAP_DANCE_FN_ADVANCED(dance_mode, dance_mode_finished, dance_mode_reset)
+enum custom_keycodes {
+    NEXT_LAYER
 };
+
+void blinkLed(uint8_t count);
+
+uint8_t currentLayer = 0;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [0] = LAYOUT( 
-        TD(TD_MODE_GRV), KC_A, KC_B, KC_C,
-        KC_D, KC_E, KC_F, KC_G
+    // 汎用キーマップ (Windows)
+    // レイヤーを切り替え / ウィンドウ一覧を表示 / 前のウィンドウ / 次のウィンドウ
+    // 戻る / 進む / 前のタブ / 次のタブ
+    [KL_WINDOWS] = LAYOUT(
+        NEXT_LAYER, LGUI(KC_UP), LALT(LSFT(KC_TAB)), LALT(KC_TAB),
+        LALT(KC_LEFT), LALT(KC_RIGHT), LCTL(LSFT(KC_TAB)), LCTL(KC_TAB)
+    ),
+    // Cubase向けキーマップ
+    // レイヤーを切り替え / MixConsoleを開く / エディターを開く / コードパッドを開く
+    // 選択ツール / 鉛筆ツール / はさみツール / のりツール
+    [KL_CUBASE] = LAYOUT(
+        NEXT_LAYER, LALT(KC_F3), KC_ENT, LCTL(LSFT(KC_C)),
+        KC_1, KC_8, KC_3, KC_4
+    ),
+    // Lightroom Classic向けキーマップ
+    // レイヤーを切り替え / クリップの表示 / 現像設定のコピー / 現像設定の貼り付け
+    // 削除 / Enter / 前の写真 / 次の写真
+    [KL_LIGHTROOM] = LAYOUT(
+        NEXT_LAYER, KC_J, LCTL(LSFT(KC_C)), LCTL(LSFT(KC_V)),
+        KC_DEL, KC_ENTER, KC_LEFT, KC_RIGHT
     )
 };
 
 /* Rotary encoder settings */
 void encoder_update_user(uint16_t index, bool clockwise) {
    if (clockwise) {
-        tap_code(KC_UP);    //Rotary encoder clockwise
+        tap_code(KC_MS_WH_LEFT);    //Rotary encoder clockwise
     } else {
-        tap_code(KC_DOWN);  //Rotary encoder Reverse clockwise
+        tap_code(KC_MS_WH_RIGHT);  //Rotary encoder Reverse clockwise
     }
 }
 
-void dance_mode (qk_tap_dance_state_t *state, void *user_data) {
-  if(state->count >= 3) {
-    SEND_STRING ("```");
-    reset_tap_dance (state);
-  }
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if(record->event.pressed && keycode == NEXT_LAYER) {
+        // 次のレイヤーへ移動
+        currentLayer++;
+        if(currentLayer == keymap_length) currentLayer = 0;
+        set_single_persistent_default_layer(currentLayer);
+        blinkLed(currentLayer+1); // LEDの点滅でレイヤーIDを表す
+    }
+    return true;
 }
-void dance_mode_finished (qk_tap_dance_state_t *state, void *user_data) {
-  if(state->count == 1) {
-    register_code (KC_ESC);
-  }
-  else if(state->count == 2) {
-    register_code (KC_GRV);
-  }
+
+// LEDの点滅
+uint16_t ledLastChecked = 0; // 最後にLEDの状態をチェックした時間
+bool ledValue = false; // falseで消灯 trueで点灯
+uint8_t ledCountToBlink = 0;
+
+void blinkLed(uint8_t count) {
+    ledCountToBlink = count;
 }
-void dance_mode_reset (qk_tap_dance_state_t *state, void *user_data) {
-  if(state->count == 1) {
-    unregister_code (KC_ESC);
-  }
-  else if(state->count == 2) {
-    unregister_code (KC_GRV);
-  }
+
+void matrix_init_user(void) {
+    writePin(PRO_MICRO_LED_TX, !ledValue); //LED消灯
+    writePin(PRO_MICRO_LED_RX, !ledValue); //LED消灯
+    ledLastChecked = timer_read();
+}
+
+void matrix_scan_user(void) {
+    if(ledCountToBlink > 0 && timer_elapsed(ledLastChecked) > 100) {
+        ledLastChecked = timer_read();
+        ledValue = !ledValue;
+        writePin(PRO_MICRO_LED_TX, !ledValue); // writePinはtrueだと消灯 falseだと点灯
+        writePin(PRO_MICRO_LED_RX, !ledValue);
+        if(ledValue == false) ledCountToBlink--;
+    }
 }
