@@ -26,12 +26,12 @@ enum keymap_layer {
 };
 
 enum custom_keycodes {
-    NEXT_LAYER
+    NEXT_LAYER = SAFE_RANGE
 };
 
 void blinkLed(uint8_t count);
 
-uint8_t currentLayer = 0;
+uint8_t currentLayer = 0; // 初期化時にEEPROMから読み込まれる
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // 汎用キーマップ (Windows)
@@ -71,7 +71,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         // 次のレイヤーへ移動
         currentLayer++;
         if(currentLayer == keymap_length) currentLayer = 0;
-        set_single_persistent_default_layer(currentLayer);
+        set_single_persistent_default_layer(currentLayer); // この時EEPROMに記録されるため再起動してもレイヤー設定は保持される
         blinkLed(currentLayer+1); // LEDの点滅でレイヤーIDを表す
     }
     return true;
@@ -87,9 +87,21 @@ void blinkLed(uint8_t count) {
 }
 
 void matrix_init_user(void) {
+    setPinOutput(PRO_MICRO_LED_TX);
+    setPinOutput(PRO_MICRO_LED_RX);
     writePin(PRO_MICRO_LED_TX, !ledValue); //LED消灯
     writePin(PRO_MICRO_LED_RX, !ledValue); //LED消灯
     ledLastChecked = timer_read();
+    // EEPROMに記録されたレイヤー設定を復元
+    uint8_t defaultLayer = eeconfig_read_default_layer();
+    for(uint8_t i=0;i<keymap_length;i++) {
+        if(defaultLayer == 1U << i) {
+            currentLayer = i;
+            break;
+        }
+    }
+    // 起動時にもLED点滅で現在のレイヤー設定を表す
+    blinkLed(currentLayer+1);
 }
 
 void matrix_scan_user(void) {
@@ -100,4 +112,10 @@ void matrix_scan_user(void) {
         writePin(PRO_MICRO_LED_RX, !ledValue);
         if(ledValue == false) ledCountToBlink--;
     }
+}
+
+bool led_update_user(led_t led_state) {
+    writePin(PRO_MICRO_LED_TX, !ledValue); // writePinはtrueだと消灯 falseだと点灯
+    writePin(PRO_MICRO_LED_RX, !ledValue);
+    return true;
 }
