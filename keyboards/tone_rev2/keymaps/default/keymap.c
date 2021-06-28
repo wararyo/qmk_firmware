@@ -35,10 +35,10 @@ uint8_t currentLayer = 0; // 初期化時にEEPROMから読み込まれる
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // 汎用キーマップ (Windows)
-    // レイヤーを切り替え / ウィンドウ一覧を表示 / 前のウィンドウ / 次のウィンドウ
+    // レイヤーを切り替え / ウィンドウ一覧を表示 / デスクトップを表示 / スクリーンショットを撮影
     // 戻る / 進む / 前のタブ / 次のタブ
     [KL_WINDOWS] = LAYOUT(
-        NEXT_LAYER, LGUI(KC_UP), LALT(LSFT(KC_TAB)), LALT(KC_TAB),
+        NEXT_LAYER, LGUI(KC_TAB), LGUI(KC_D), LGUI(LSFT(KC_S)),
         LALT(KC_LEFT), LALT(KC_RIGHT), LCTL(LSFT(KC_TAB)), LCTL(KC_TAB)
     ),
     // Cubase向けキーマップ
